@@ -122,7 +122,7 @@ def main():
                 message = parse_status(homework[0])
                 send_message(bot, message)
             logger.debug('Отсутствует новый статус домашней работы.')
-            current_timestamp = 0
+            current_timestamp = int(time.time())
             time.sleep(RETRY_TIME)
 
         except Exception as error:
