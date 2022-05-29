@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from my_exception import EndpointError
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 fileHandler = logging.FileHandler('bot.log')
 streamHandler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter('%(asctime)s, %(levelname)s, %(message)s')
@@ -113,8 +113,7 @@ def check_tokens():
 def main():
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = time.time() + RETRY_TIME
-
+    current_timestamp = int(time.time()) + RETRY_TIME
     while check_tokens():
         try:
             response = get_api_answer(current_timestamp)
@@ -122,9 +121,7 @@ def main():
             if homework != []:
                 message = parse_status(homework[0])
                 send_message(bot, message)
-            logger.debug(
-                'Отсутствует новый статус домашней работы.'
-            )
+            logger.debug('Отсутствует новый статус домашней работы.')
             current_timestamp = 0
             time.sleep(RETRY_TIME)
 
