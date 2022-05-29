@@ -7,7 +7,7 @@ import requests
 import telegram
 from dotenv import load_dotenv
 
-from my_exception import TokenError, EndpointError
+from my_exception import EndpointError
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
