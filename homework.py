@@ -25,7 +25,7 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
-RETRY_TIME = 60
+RETRY_TIME = 600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
@@ -64,7 +64,7 @@ def get_api_answer(current_timestamp):
 
 def check_response(response):
     """Получаем из ответа от API список с домашней работой,
-    логируем все неожиданности."""
+       логируем все неожиданности."""
     if type(response) != dict:
         logger.error(
             f'Получен не верный тип данных - '
@@ -87,7 +87,7 @@ def check_response(response):
 
 def parse_status(homework):
     """Парсим значения из полученного списка,
-    логтруем отсутствие ожидаемых значений"""
+       логтруем отсутствие ожидаемых значений."""
     if homework.get('homework_name') is None:
         logger.error('В списке нет ключа homework_name')
         raise KeyError
@@ -104,9 +104,10 @@ def parse_status(homework):
 
 
 def check_tokens():
-    """Проверяем, что токены доступны, лотгурем отсутствие"""
-    if ((PRACTICUM_TOKEN != None) and (TELEGRAM_TOKEN != None) and (
-            TELEGRAM_CHAT_ID != None)) == True:
+    """Проверяем, что токены доступны, лотгурем отсутствие."""
+    if ((PRACTICUM_TOKEN is not None) and
+        (TELEGRAM_TOKEN is not None) and
+        (TELEGRAM_CHAT_ID is not None)) is True:
         return True
     else:
         return False
@@ -117,7 +118,7 @@ def check_tokens():
 def main():
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = 0
+    current_timestamp = time.time() + RETRY_TIME
 
     while check_tokens():
         try:
