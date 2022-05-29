@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 import time
 
 import requests
@@ -8,11 +9,15 @@ from dotenv import load_dotenv
 
 from my_exception import TokenError, EndpointError
 
-logging.basicConfig(
-    level=logging.INFO,
-    filename='bot.log',
-    format='%(asctime)s, %(levelname)s, %(message)s'
-)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+fileHandler = logging.FileHandler('bot.log')
+streamHandler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter('%(asctime)s, %(levelname)s, %(message)s')
+streamHandler.setFormatter(formatter)
+fileHandler.setFormatter(formatter)
+logger.addHandler(streamHandler)
+logger.addHandler(fileHandler)
 
 load_dotenv()
 
@@ -35,9 +40,9 @@ def send_message(bot, message):
     """Функция отправки сообщения, логируем успех и ошибку отправки."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
-        logging.info(f'Сообщение "{message}", отправлено успешно')
+        logger.info(f'Сообщение "{message}", отправлено успешно')
     except Exception:
-        logging.exception('Ошибка отправки сообщения')
+        logger.exception('Ошибка отправки сообщения')
 
 
 def get_api_answer(current_timestamp):
@@ -47,7 +52,7 @@ def get_api_answer(current_timestamp):
     headers = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
     response = requests.get(ENDPOINT, headers=headers, params=params)
     if response.status_code != 200:
-        logging.error(
+        logger.error(
             f'Эндпоинт https://practicum.yandex.ru/api/user_api/'
             f'homework_statuses/ недоступен, '
             f'код ошибки - {response.status_code}'
@@ -61,19 +66,19 @@ def check_response(response):
     """Получаем из ответа от API список с домашней работой,
     логируем все неожиданности."""
     if type(response) != dict:
-        logging.error(
+        logger.error(
             f'Получен не верный тип данных - '
             f'{type(response)}, а ожидался словарь')
         raise TypeError
     if len(response) == 0:
-        logging.error('В ответ от сервера получен пустой словарь')
+        logger.error('В ответ от сервера получен пустой словарь')
         raise ValueError
     if 'homeworks' not in response:
         logging.error('В полученном словаре нет ключа homeworks')
         raise KeyError
     homework = response.get('homeworks')
     if type(homework) != list:
-        logging.error(
+        logger.error(
             f'Получен не верный тип данных - '
             f'{type(homework)}, а ожидался список')
         raise TypeError
@@ -84,15 +89,15 @@ def parse_status(homework):
     """Парсим значения из полученного списка,
     логтруем отсутствие ожидаемых значений"""
     if homework.get('homework_name') is None:
-        logging.error('В списке нет ключа homework_name')
+        logger.error('В списке нет ключа homework_name')
         raise KeyError
     homework_name = homework.get('homework_name')
     if homework.get('status') is None:
-        logging.error('В списке нет ключа status')
+        logger.error('В списке нет ключа status')
         raise KeyError
     homework_status = homework.get('status')
     if homework_status not in HOMEWORK_STATUSES:
-        logging.error('Неизвестный статус работы')
+        logger.error('Неизвестный статус работы')
         raise ValueError
     verdict = HOMEWORK_STATUSES.get(homework_status)
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
@@ -105,7 +110,7 @@ def check_tokens():
         return True
     else:
         return False
-        logging.critical('Ошибка чтения токенов')
+        logger.critical('Ошибка чтения токенов')
         raise TokenError
 
 
@@ -121,7 +126,7 @@ def main():
             if homework != []:
                 message = parse_status(homework[0])
                 send_message(bot, message)
-            logging.debug(
+            logger.debug(
                 'Отсутствует новый статус домашней работы.'
             )
             current_timestamp = 0
