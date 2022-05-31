@@ -8,3 +8,7 @@ class SendMessageError(Exception):
 
 class EndpointError(Exception):
     pass
+
+
+class RequestError(Exception):
+    pass
