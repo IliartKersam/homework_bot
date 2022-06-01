@@ -11,10 +11,10 @@ from my_exception import EndpointError, SendMessageError, RequestError
 
 logging.basicConfig(
     level=logging.DEBUG,
-    stream=sys.stdout,
+    filename='bot.log',
     format='%(asctime)s, %(levelname)s, %(message)s'
 )
-logger = logging.getLogger(__name__)
+
 
 
 load_dotenv()
@@ -53,6 +53,7 @@ def get_api_answer(current_timestamp: int) -> dict:
     logger.debug('Направляем запрос к серверу яндекс')
     try:
         response = requests.get(**data)
+        logger.debug('Получен ответ от сервера')
     except RequestError as error:
         logger.error(f'Ошибка при запросе к серверу - {error}')
     if response.status_code != 200:
@@ -153,12 +154,12 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    main()
+    logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
-    fileHandler = logging.FileHandler('bot.log')
     streamHandler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter('%(asctime)s, %(levelname)s, %(message)s')
     streamHandler.setFormatter(formatter)
-    fileHandler.setFormatter(formatter)
     logger.addHandler(streamHandler)
-    logger.addHandler(fileHandler)
+
+    main()
+
