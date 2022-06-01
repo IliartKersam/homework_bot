@@ -15,8 +15,6 @@ logging.basicConfig(
     format='%(asctime)s, %(levelname)s, %(message)s'
 )
 
-
-
 load_dotenv()
 
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
@@ -162,4 +160,3 @@ if __name__ == '__main__':
     logger.addHandler(streamHandler)
 
     main()
-
