@@ -14,7 +14,7 @@ logging.basicConfig(
     filename='bot.log',
     format='%(asctime)s, %(levelname)s, %(message)s'
 )
-
+logger = logging.getLogger(__name__)
 load_dotenv()
 
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
@@ -152,7 +152,6 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
     streamHandler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter('%(asctime)s, %(levelname)s, %(message)s')
