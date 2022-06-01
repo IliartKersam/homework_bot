@@ -130,7 +130,6 @@ def main() -> None:
                 else:
                     logger.debug('Отсутствует новый статус домашней работы')
                 current_timestamp = int(time.time())
-                time.sleep(RETRY_TIME)
             except Exception as error:
                 message = f'Сбой в работе программы: {error}'
                 logger.error(message)
@@ -157,5 +156,4 @@ if __name__ == '__main__':
     formatter = logging.Formatter('%(asctime)s, %(levelname)s, %(message)s')
     streamHandler.setFormatter(formatter)
     logger.addHandler(streamHandler)
-
     main()
