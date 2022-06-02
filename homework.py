@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import time
+from http import HTTPStatus
 
 import requests
 import telegram
@@ -9,21 +10,13 @@ from dotenv import load_dotenv
 
 from my_exception import EndpointError, SendMessageError, RequestError
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    filename='bot.log',
-    format='%(asctime)s, %(levelname)s, %(message)s'
-)
 logger = logging.getLogger(__name__)
 load_dotenv()
-
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
 RETRY_TIME = 600
-ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
-HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
 HOMEWORK_VERDICTS = {
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
@@ -45,23 +38,23 @@ def send_message(bot: telegram.bot.Bot, message: str) -> None:
 def get_api_answer(current_timestamp: int) -> dict:
     """Получаем ответ от API Яндекса, логируем ответ отличный от 200."""
     timestamp = current_timestamp
-    params = {'from_date': timestamp}
     headers = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
-    data = {'url': ENDPOINT, 'headers': headers, 'params': params}
-    logger.debug('Направляем запрос к серверу яндекс')
+    endpoint = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
+    params = {'from_date': timestamp}
+    data = {'url': endpoint, 'headers': headers, 'params': params}
+    logger.debug('Направляем запрос к серверу Яндекс')
     try:
         response = requests.get(**data)
-        logger.debug('Получен ответ от сервера')
-    except RequestError as error:
-        logger.error(f'Ошибка при запросе к серверу - {error}')
-    if response.status_code != 200:
-        raise EndpointError(
-            f'Эндпоинт https://practicum.yandex.ru/api/user_api/'
-            f'homework_statuses/ недоступен, '
-            f'код ошибки - {response.status_code}'
-        )
-    response = response.json()
-    return response
+        if response.status_code != HTTPStatus.OK:
+            raise EndpointError(
+                f'Эндпоинт https://practicum.yandex.ru/api/user_api/'
+                f'homework_statuses/ недоступен, '
+                f'код ошибки - {response.status_code}'
+            )
+        logger.debug(f'Получен ответ от сервера')
+    except Exception as error:
+        raise RequestError(f'Ошибка при запросе к серверу - {error}')
+    return response.json()
 
 
 def check_response(response: dict) -> list:
@@ -72,7 +65,7 @@ def check_response(response: dict) -> list:
             f'Получен не верный тип данных - '
             f''f'{type(response)}, а ожидался словарь'
         )
-    if len(response) == 0:
+    if not response:
         raise ValueError('В ответ от сервера получен пустой словарь')
     if 'homeworks' not in response:
         raise KeyError('В полученном словаре нет ключа homeworks')
@@ -86,15 +79,13 @@ def check_response(response: dict) -> list:
 
 
 def parse_status(homework: dict) -> str:
-    """Парсим значения, логтруем отсутствие ожидаемых значений."""
-    get_homework_name = homework.get('homework_name')
-    if get_homework_name is None:
+    """Парсим значения, логируем отсутствие ожидаемых значений."""
+    homework_name = homework.get('homework_name')
+    if not homework_name:
         raise KeyError('В списке нет ключа homework_name')
-    homework_name = get_homework_name
-    get_status = homework.get('status')
-    if get_status is None:
+    homework_status = homework.get('status')
+    if not homework_status:
         raise KeyError('В списке нет ключа status')
-    homework_status = get_status
     if homework_status not in HOMEWORK_VERDICTS:
         raise ValueError('Неизвестный статус работы')
     verdict = HOMEWORK_VERDICTS.get(homework_status)
@@ -102,7 +93,7 @@ def parse_status(homework: dict) -> str:
 
 
 def check_tokens() -> bool:
-    """Проверяем, что токены доступны, лотгурем отсутствие."""
+    """Проверяем, что токены доступны, логируем отсутствие."""
     return all([PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID])
 
 
@@ -112,45 +103,50 @@ def main() -> None:
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time()) - RETRY_TIME
     last_message = None
-    if check_tokens():
-        while True:
-            try:
-                response = get_api_answer(current_timestamp)
-                homework = check_response(response)
-                if homework != []:
-                    message = parse_status(homework[0])
-                    if message != last_message:
-                        send_message(bot, message)
-                        last_message = message
-                    else:
-                        logger.debug(
-                            'Получен повтор последнего сообщения, '
-                            'отправка отменена'
-                        )
-                else:
-                    logger.debug('Отсутствует новый статус домашней работы')
-                current_timestamp = int(time.time())
-            except Exception as error:
-                message = f'Сбой в работе программы: {error}'
-                logger.error(message)
+    if not check_tokens():
+        logger.critical('Ошибка чтения токенов')
+        sys.exit('Ошибка чтения токенов')
+    while True:
+        try:
+            response = get_api_answer(current_timestamp)
+            homework = check_response(response)
+            if homework:
+                message = parse_status(homework[0])
                 if message != last_message:
-                    try:
-                        send_message(bot, message)
-                    except Exception as error:
-                        logger.error(f'{error}')
+                    send_message(bot, message)
                     last_message = message
                 else:
                     logger.debug(
-                        'Повтор последнего сообщения об ошибке, '
+                        'Получен повтор последнего сообщения, '
                         'отправка отменена'
                     )
-            finally:
-                time.sleep(RETRY_TIME)
-    logger.critical('Ошибка чтения токенов')
-    sys.exit()
+            else:
+                logger.debug('Отсутствует новый статус домашней работы')
+            current_timestamp = int(time.time())
+        except Exception as error:
+            message = f'Сбой в работе программы: {error}'
+            logger.error(message)
+            if message != last_message:
+                try:
+                    send_message(bot, message)
+                except Exception as error:
+                    logger.error(f'{error}')
+                last_message = message
+            else:
+                logger.debug(
+                    'Повтор последнего сообщения об ошибке, '
+                    'отправка отменена'
+                )
+        finally:
+            time.sleep(RETRY_TIME)
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.DEBUG,
+        filename='bot.log',
+        format='%(asctime)s, %(levelname)s, %(message)s'
+    )
     logger.setLevel(logging.DEBUG)
     streamHandler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter('%(asctime)s, %(levelname)s, %(message)s')
