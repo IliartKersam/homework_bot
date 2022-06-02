@@ -51,7 +51,7 @@ def get_api_answer(current_timestamp: int) -> dict:
                 f'homework_statuses/ недоступен, '
                 f'код ошибки - {response.status_code}'
             )
-        logger.debug(f'Получен ответ от сервера')
+        logger.debug('Получен ответ от сервера')
     except Exception as error:
         raise RequestError(f'Ошибка при запросе к серверу - {error}')
     return response.json()
