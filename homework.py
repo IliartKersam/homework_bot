@@ -63,7 +63,7 @@ def check_response(response: dict) -> list:
     if not isinstance(response, dict):
         raise TypeError(
             f'Получен не верный тип данных - '
-            f''f'{type(response)}, а ожидался словарь'
+            f'{type(response)}, а ожидался словарь'
         )
     if not response:
         raise ValueError('В ответ от сервера получен пустой словарь')
@@ -83,6 +83,8 @@ def parse_status(homework: dict) -> str:
     homework_name = homework.get('homework_name')
     if not homework_name:
         raise KeyError('В списке нет ключа homework_name')
+    homework_name = homework_name.split('.')[0]
+    homework_name = homework_name.split('__')[1]
     homework_status = homework.get('status')
     if not homework_status:
         raise KeyError('В списке нет ключа status')
