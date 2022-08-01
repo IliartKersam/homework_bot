@@ -16,7 +16,7 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
-RETRY_TIME = 300
+RETRY_TIME = 600
 
 HOMEWORK_VERDICTS = {
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
@@ -83,9 +83,9 @@ def parse_status(homework: dict) -> str:
     homework_name = homework.get('homework_name')
     if not homework_name:
         raise KeyError('В списке нет ключа homework_name')
-    homework_name = homework_name.split('.')[0]
-    homework_name = homework_name.split('__')[1]
+    homework_name = homework_name.split('.')[0].split('__')[1]
     homework_status = homework.get('status')
+    homework_comment = homework.get('reviewer_comment')
     if not homework_status:
         raise KeyError('В списке нет ключа status')
     if homework_status not in HOMEWORK_VERDICTS:
