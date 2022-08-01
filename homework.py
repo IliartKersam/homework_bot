@@ -102,7 +102,7 @@ def main() -> None:
     """Основная логика работы бота."""
     logger.debug('Запуск бота...')
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = 0 #int(time.time()) - RETRY_TIME
+    current_timestamp = int(time.time()) - RETRY_TIME
     last_message = None
     if not check_tokens():
         logger.critical('Ошибка чтения токенов')
