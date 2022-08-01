@@ -83,7 +83,6 @@ def parse_status(homework: dict) -> str:
     homework_name = homework.get('homework_name')
     if not homework_name:
         raise KeyError('В списке нет ключа homework_name')
-    homework_name = homework_name.split('.')[0].split('__')[1]
     homework_status = homework.get('status')
     homework_comment = homework.get('reviewer_comment')
     if not homework_status:
