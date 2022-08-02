@@ -90,7 +90,7 @@ def parse_status(homework: dict) -> str:
     if homework_status not in HOMEWORK_VERDICTS:
         raise ValueError('Неизвестный статус работы')
     verdict = HOMEWORK_VERDICTS.get(homework_status)
-    return f'Изменился статус проверки работы "{homework_name}". {verdict}'
+    return f'Изменился статус проверки работы "{homework_name}". {verdict} Комментарий ревьюреа {homework_comment}'
 
 
 def check_tokens() -> bool:
@@ -102,7 +102,7 @@ def main() -> None:
     """Основная логика работы бота."""
     logger.debug('Запуск бота...')
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = int(time.time()) - RETRY_TIME
+    current_timestamp =0 # int(time.time()) - RETRY_TIME
     last_message = None
     if not check_tokens():
         logger.critical('Ошибка чтения токенов')
