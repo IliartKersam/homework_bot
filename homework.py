@@ -49,7 +49,7 @@ def get_api_answer(current_timestamp: int) -> dict:
             raise EndpointError(
                 f'Эндпоинт https://practicum.yandex.ru/api/user_api/'
                 f'homework_statuses/ недоступен, '
-                f'код ошибки - {response.status_code}. {response.text}'
+                f'код ошибки - {response.status_code}. {response.text.get("message")}'
             )
         logger.debug('Получен ответ от сервера')
     except Exception as error:
