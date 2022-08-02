@@ -46,7 +46,7 @@ def get_api_answer(current_timestamp: int) -> dict:
     try:
         response = requests.get(**data)
         if response.status_code != HTTPStatus.OK:
-            error_message = response.text.split('\"')[-1]
+            error_message = response.text.split('\"')[-2]
             raise EndpointError(
                 f'Эндпоинт https://practicum.yandex.ru/api/user_api/'
                 f'homework_statuses/ недоступен, '
