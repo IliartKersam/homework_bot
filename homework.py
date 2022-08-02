@@ -16,7 +16,7 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
-RETRY_TIME = 600
+RETRY_TIME = 10
 
 HOMEWORK_VERDICTS = {
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
@@ -90,7 +90,7 @@ def parse_status(homework: dict) -> str:
     if homework_status not in HOMEWORK_VERDICTS:
         raise ValueError('Неизвестный статус работы')
     verdict = HOMEWORK_VERDICTS.get(homework_status)
-    return f'Изменился статус проверки работы "{homework_name}". {verdict} Комментарий ревьюреа {homework_comment}'
+    return f'Изменился статус проверки работы "{homework_name}". {verdict} Комментарий ревьюреа: {homework_comment}'
 
 
 def check_tokens() -> bool:
@@ -102,8 +102,9 @@ def main() -> None:
     """Основная логика работы бота."""
     logger.debug('Запуск бота...')
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    current_timestamp =0 # int(time.time()) - RETRY_TIME
+    current_timestamp = 0 #int(time.time()) - RETRY_TIME
     last_message = None
+    last_message_error = None
     if not check_tokens():
         logger.critical('Ошибка чтения токенов')
         sys.exit('Ошибка чтения токенов')
@@ -127,12 +128,12 @@ def main() -> None:
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logger.error(message)
-            if message != last_message:
+            if message != last_message_error:
                 try:
                     send_message(bot, message)
                 except Exception as error:
                     logger.error(f'{error}')
-                last_message = message
+                last_message_error = message
             else:
                 logger.debug(
                     'Повтор последнего сообщения об ошибке, '
