@@ -33,9 +33,9 @@ Create a file for secret keys in the root folder of the project
 touch .env
 ```
 Fill in the **.env** file according to the template:
-> PRACTICUM_TOKEN=<Get token here - https://oauth.yandex.ru/authorize?response_type=token&client_id=1d0b9dd4d652455a9eb710d450ff456a>
-> TELEGRAM_TOKEN=<Your Telegram Bot token>
-> TELEGRAM_CHAT_ID=<Your Telegram chat ID>
+> PRACTICUM_TOKEN= <Get token here - https://oauth.yandex.ru/authorize?response_type=token&client_id=1d0b9dd4d652455a9eb710d450ff456a>
+> TELEGRAM_TOKEN= <Your Telegram Bot token>
+> TELEGRAM_CHAT_ID= <Your Telegram chat ID>
 
 Run the project:
 ```
