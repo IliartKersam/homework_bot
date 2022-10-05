@@ -26,89 +26,89 @@ HOMEWORK_VERDICTS = {
 
 
 def send_message(bot: telegram.bot.Bot, message: str) -> None:
-    """Функция отправки сообщения, логируем успех и ошибку отправки."""
-    logger.debug('Попытка отправки сообщения в Telegam')
+    """The function of sending a message, we log the success and error of sending."""
+    logger.debug('Trying to send a message to Telegram.')
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
-        logger.debug(f'Сообщение "{message}", отправлено успешно')
+        logger.debug(f'Message "{message}", sent successfully')
     except Exception:
-        raise SendMessageError('Ошибка отправки сообщения в телеграмм')
+        raise SendMessageError('Error sending message to Telegram')
 
 
 def get_api_answer(current_timestamp: int) -> dict:
-    """Получаем ответ от API Яндекса, логируем ответ отличный от 200."""
+    """We receive a response from the Yandex API, log a response other than 200."""
     timestamp = current_timestamp
     headers = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
     endpoint = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
     params = {'from_date': timestamp}
     data = {'url': endpoint, 'headers': headers, 'params': params}
-    logger.debug('Направляем запрос к серверу Яндекс')
+    logger.debug('Sending a request to the Yandex server')
     try:
         response = requests.get(**data)
         if response.status_code != HTTPStatus.OK:
             error_message = response.text.split('\"')[-2]
             raise EndpointError(
                 f'Эндпоинт https://practicum.yandex.ru/api/user_api/'
-                f'homework_statuses/ недоступен, '
-                f'код ошибки - {response.status_code}. {error_message}'
+                f'homework_statuses/ not available, '
+                f'error code - {response.status_code}. {error_message}'
             )
-        logger.debug('Получен ответ от сервера')
+        logger.debug('Received a response from the server')
     except Exception as error:
-        raise RequestError(f'Ошибка при запросе к серверу - {error}')
+        raise RequestError(f'Error while requesting the server - {error}')
     return response.json()
 
 
 def check_response(response: dict) -> list:
-    """Получаем из ответа от API, логируем все неожиданности."""
-    logger.debug('Начинаем проверку ответа от сервера')
+    """We get from the response from the API, we log all surprises."""
+    logger.debug('We start checking the response from the server.')
     if not isinstance(response, dict):
         raise TypeError(
-            f'Получен не верный тип данных - '
-            f'{type(response)}, а ожидался словарь'
+            f'Wrong data type received - '
+            f'{type(response)}, dictionary expected'
         )
     if not response:
-        raise ValueError('В ответ от сервера получен пустой словарь')
+        raise ValueError('Received an empty dictionary in response from the server.')
     if 'homeworks' not in response:
-        raise KeyError('В полученном словаре нет ключа homeworks')
+        raise KeyError('The resulting dictionary does not contain the homeworks key.')
     homework = response.get('homeworks')
     if not isinstance(homework, list):
         raise TypeError(
-            f'Получен не верный тип данных - '
-            f'{type(homework)}, а ожидался список'
+            f'Wrong data type received - '
+            f'{type(homework)}, expected list'
         )
     return homework
 
 
 def parse_status(homework: dict) -> str:
-    """Парсим значения, логируем отсутствие ожидаемых значений."""
+    """Parsing values, logging the absence of expected values."""
     homework_name = homework.get('homework_name')
     if not homework_name:
-        raise KeyError('В списке нет ключа homework_name')
+        raise KeyError('There is no homework_name key in the list.')
     homework_status = homework.get('status')
     homework_comment = homework.get('reviewer_comment')
     if not homework_status:
-        raise KeyError('В списке нет ключа status')
+        raise KeyError('There is no status key in the list.')
     if homework_status not in HOMEWORK_VERDICTS:
-        raise ValueError('Неизвестный статус работы')
+        raise ValueError('Unknown homework status.')
     verdict = HOMEWORK_VERDICTS.get(homework_status)
-    return f'Изменился статус проверки работы "{homework_name}". {verdict} {homework_comment}'
+    return f'Homework verification status changed "{homework_name}". {verdict} {homework_comment}'
 
 
 def check_tokens() -> bool:
-    """Проверяем, что токены доступны, логируем отсутствие."""
+    """Checking that tokens are available, logging the absence."""
     return all([PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID])
 
 
 def main() -> None:
-    """Основная логика работы бота."""
-    logger.debug('Запуск бота...')
+    """The main logic of the bot."""
+    logger.debug('Start the bot...')
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time()) - RETRY_TIME
     last_message = None
     last_message_error = None
     if not check_tokens():
-        logger.critical('Ошибка чтения токенов')
-        sys.exit('Ошибка чтения токенов')
+        logger.critical('Error reading tokens.')
+        sys.exit('Error reading tokens.')
     while True:
         try:
             response = get_api_answer(current_timestamp)
@@ -120,14 +120,14 @@ def main() -> None:
                     last_message = message
                 else:
                     logger.debug(
-                        'Получен повтор последнего сообщения, '
-                        'отправка отменена'
+                        'Received a repeat of the last message, '
+                        'sending message canceled'
                     )
             else:
-                logger.debug('Отсутствует новый статус домашней работы')
+                logger.debug('Missing new homework status.')
             current_timestamp = int(time.time())
         except Exception as error:
-            message = f'Сбой в работе программы: {error}'
+            message = f'Program crash: {error}'
             logger.error(message)
             if message != last_message_error:
                 try:
@@ -137,8 +137,8 @@ def main() -> None:
                 last_message_error = message
             else:
                 logger.debug(
-                    'Повтор последнего сообщения об ошибке, '
-                    'отправка отменена'
+                    'Received a repeat of the last error message, '
+                    'sending message canceled'
                 )
         finally:
             time.sleep(RETRY_TIME)
